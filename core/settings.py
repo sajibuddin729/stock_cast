@@ -26,7 +26,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-tb)ibt+j(u5ya)zn=3kw*gea!dif7+_y04#uzy#4_fzl_esiyq')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
 ALLOWED_HOSTS = ['*']
 
@@ -67,7 +67,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True  # Set specific domains in production if needed
+CORS_ALLOW_ALL_ORIGINS = True
 
 ROOT_URLCONF = 'core.urls'
 
@@ -108,11 +108,7 @@ DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
     DATABASES = {
-        'default': dj_database_url.config(
-            default=DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=False
-        )
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
     }
 else:
     DATABASES = {
@@ -187,7 +183,7 @@ CELERY_TIMEZONE = 'Asia/Dhaka'
 CELERY_BEAT_SCHEDULE = {
     'fetch-market-data-every-minute': {
         'task': 'market_data.tasks.fetch_live_market_data',
-        'schedule': 60.0,  # Runs every 60 seconds
+        'schedule': 60.0,
     },
 }
 
