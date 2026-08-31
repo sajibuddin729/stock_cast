@@ -17,7 +17,28 @@ from .serializers import (
     UserProfileSerializer,
     WalletTransactionSerializer,
 )
-from .sslcommerz import initiate_sslcommerz_session, validate_sslcommerz_payment
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from django.contrib.auth.models import User
+from django.db.models import Q
+
+class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """
+    Dual Login Serializer: Allows users to log in using EITHER Email OR Username seamlessly!
+    """
+    def validate(self, attrs):
+        username_or_email = attrs.get('username', '').strip()
+        if username_or_email:
+            user = User.objects.filter(
+                Q(username__iexact=username_or_email) | Q(email__iexact=username_or_email)
+            ).first()
+            if user:
+                attrs['username'] = user.username
+        return super().validate(attrs)
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = CustomTokenObtainPairSerializer
 
 class RegisterView(APIView):
     """
