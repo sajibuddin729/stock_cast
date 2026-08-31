@@ -103,7 +103,7 @@ CHANNEL_LAYERS = {
 }
 
 
-# Database (Render Managed PostgreSQL vs Local PostgreSQL)
+# Database (Render Managed PostgreSQL vs Local Fallback)
 DATABASE_URL = os.environ.get('DATABASE_URL')
 
 if DATABASE_URL:
