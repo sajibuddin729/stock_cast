@@ -1,10 +1,15 @@
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView  # JWT এর জন্য
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from portfolio.views import RegisterView
+from core.views import HealthCheckView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    
+    # 24/7 Keep-Alive & Server Health Check APIs
+    path('api/health/', HealthCheckView.as_view(), name='health-check'),
+    path('api/ping/', HealthCheckView.as_view(), name='ping'),
     
     # Auth APIs (Register, Login & Refresh Token)
     path('api/auth/register/', RegisterView.as_view(), name='auth_register'),
