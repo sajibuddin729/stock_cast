@@ -1,0 +1,10 @@
+# Python / Django
+*.pyc
+__pycache__/
+*.sqlite3
+staticfiles/
+venv/
+.env
+.DS_Store
+celerybeat-schedule.db
+dump.rdb

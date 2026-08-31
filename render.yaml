@@ -1,0 +1,88 @@
+services:
+  # 1. Main Django ASGI Web Service (REST API & WebSockets)
+  - type: web
+    name: stockcast-backend-api
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: daphne -b 0.0.0.0 -p $PORT core.asgi:application
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stockcast-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stockcast-redis
+          property: connectionString
+      - key: SSLCOMMERZ_STORE_ID
+        value: unive6a649e376521b
+      - key: SSLCOMMERZ_STORE_PASS
+        value: unive6a649e376521b@ssl
+      - key: SSLCOMMERZ_IS_SANDBOX
+        value: "True"
+      - key: WITHDRAWAL_FEE_PERCENT
+        value: "1.00"
+      - key: CASH_IN_FEE_PERCENT
+        value: "0.00"
+      - key: USD_TO_BDT_RATE
+        value: "120.00"
+
+  # 2. Celery Worker (Scrapes DSE, Global Stock & ML Engine every 60s)
+  - type: worker
+    name: stockcast-celery-worker
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: celery -A core worker --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stockcast-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stockcast-redis
+          property: connectionString
+
+  # 3. Celery Beat Scheduler
+  - type: worker
+    name: stockcast-celery-beat
+    runtime: python
+    buildCommand: ./build.sh
+    startCommand: celery -A core beat --loglevel=info
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: stockcast-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: stockcast-redis
+          property: connectionString
+
+  # 4. Redis Service for Channels & Celery Broker
+  - type: redis
+    name: stockcast-redis
+    ipAllowList: []
+
+databases:
+  # 5. Production Managed PostgreSQL Database
+  - name: stockcast-db
+    databaseName: stock_db
+    user: postgres
