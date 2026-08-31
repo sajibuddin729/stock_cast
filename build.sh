@@ -11,3 +11,6 @@ python manage.py collectstatic --no-input
 
 echo "===> Applying database migrations..."
 python manage.py migrate --noinput
+
+echo "===> Seeding initial market data..."
+python manage.py seed_db
