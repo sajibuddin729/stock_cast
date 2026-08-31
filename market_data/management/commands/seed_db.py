@@ -8,7 +8,7 @@ from ml_engine.models import ModelPerformance
 logger = logging.getLogger(__name__)
 
 class Command(BaseCommand):
-    help = 'Seeds initial stock market data (DSE + Global) and ML stats into database if empty.'
+    help = 'Seeds all 395 DSE stocks and 9 Global stocks into PostgreSQL database if missing.'
 
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("===> Checking database seed state..."))
@@ -22,25 +22,29 @@ class Command(BaseCommand):
             ])
             self.stdout.write(self.style.SUCCESS("✓ Seeded ML ModelPerformance stats."))
 
-        # 2. Seed Stocks (DSE & Global)
-        stock_count = Stock.objects.count()
-        if stock_count < 10:
-            self.stdout.write(self.style.WARNING("Database stocks count is low. Seeding Global & DSE market data..."))
-            
-            # Seed Global Stocks
+        # 2. Check and Seed Global Stocks
+        global_count = Stock.objects.filter(market_type='GLOBAL').count()
+        if global_count < 9:
+            self.stdout.write(self.style.WARNING(f"Global stocks count is {global_count} (< 9). Seeding Global market data..."))
             try:
-                g_count = fetch_all_global_stocks()
-                self.stdout.write(self.style.SUCCESS(f"✓ Seeded {g_count} Global stocks via yfinance."))
+                g_added = fetch_all_global_stocks()
+                self.stdout.write(self.style.SUCCESS(f"✓ Seeded {g_added} Global stocks via yfinance."))
             except Exception as e:
                 logger.error(f"Global stock seeding error: {e}")
 
-            # Seed DSE Stocks
+        # 3. Check and Seed all 395 DSE Stocks
+        dse_count = Stock.objects.filter(market_type='DSE').count()
+        if dse_count < 300:
+            self.stdout.write(self.style.WARNING(f"DSE stocks count is {dse_count} (< 300). Seeding 395 DSE stocks from dsebd.org..."))
             try:
-                dse_count = fetch_and_save_dse_data()
-                self.stdout.write(self.style.SUCCESS(f"✓ Seeded {dse_count} DSE stocks from dsebd.org."))
+                dse_added = fetch_and_save_dse_data()
+                self.stdout.write(self.style.SUCCESS(f"✓ Seeded {dse_added} DSE stocks from dsebd.org."))
             except Exception as e:
                 logger.error(f"DSE stock seeding error: {e}")
-                
-            self.stdout.write(self.style.SUCCESS(f"✓ Seeding complete! Total stocks in DB: {Stock.objects.count()}"))
-        else:
-            self.stdout.write(self.style.SUCCESS(f"✓ Database already contains {stock_count} stocks. Skipping seed."))
+
+        total_stocks = Stock.objects.count()
+        final_dse = Stock.objects.filter(market_type='DSE').count()
+        final_global = Stock.objects.filter(market_type='GLOBAL').count()
+        self.stdout.write(self.style.SUCCESS(
+            f"✓ Database Seeding Complete! Total: {total_stocks} stocks ({final_dse} DSE stocks + {final_global} Global stocks)."
+        ))
